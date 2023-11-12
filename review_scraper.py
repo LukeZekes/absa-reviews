@@ -16,7 +16,7 @@ def get_reviews_for_product(url):
 	driver.get(url)
 
 	# Find link to reviews page
-	view_reviews_link = driver.find_element(By.CSS_SELECTOR, "#cr-pagination-footer-0 > a").get_attribute("href")
+	view_reviews_link = driver.find_element(By.CSS_SELECTOR, "#reviews-medley-footer > .a-spacing-medium > a").get_attribute("href")
 	# Navigate to review page
 	driver.get(view_reviews_link)
 	# Find total number of product reviews
