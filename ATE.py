@@ -51,12 +51,12 @@ def prep_data(data):
       sentence_spans["spans"].append(spans)
     prepped_data.append(sentence_spans)
 
-    return prepped_data
+  return prepped_data
 
 
 
 
-prep_data(train_data)
+print(prep_data(train_data))
 
 # model = Sequential()
 # model.add(Dense(100, activation="relu", input_shape = (train_data.shape[1],)))
