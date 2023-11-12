@@ -1,7 +1,7 @@
 import spacy
 import regex as re
 
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Dense, Input
 from keras.utils import to_categorical
 from gensim.models.doc2vec import Doc2Vec
@@ -9,7 +9,7 @@ import numpy as np
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from nltk import word_tokenize
-from extract_sentence_opinions import get_train_data, get_test_data
+from extract_sentence_opinions import get_train_data, get_test_data, preprocess_text, generate_spans
 from enum import IntEnum
 nlp = spacy.load("en_core_web_md")
 d2v = Doc2Vec.load("models/good/d2v.model")
@@ -23,46 +23,27 @@ class TermClasses(IntEnum):
   ASPECT = 1
   OPINION = 2
 
-
-
-def preprocess_text(text):
-    # Preprocess and stem the text
-    # Make text lowercase and remove links, text in square brackets, punctuation, and words containing numbers
-    text = text.lower()
-    text = re.sub(r'https?://\S+|www\.\S+|\[.*?\]|[^a-zA-Z\s]+|\w*\d\w*', '', text)
-    # Remove stop words
-    # filtered_words = [w for w in text.split() if w not in stop_words]
-    # tokens = word_tokenize(' '.join(filtered_words))
-    # stemmed_tokens = [stemmer.stem(t) for t in tokens]
-
-    return text.split()
-
-
 def prep_data(data):
-  # Data should end up as: (span, class)
-  # Generate spans of a sentence
   max_span_len = 5
   prepped_data = []
   for entry in data:
     sentence = entry["sentence"]
     aspect_tags = entry["aspect_terms"]
     opinion_tags = entry["opinion_terms"]
-    words = preprocess_text(sentence)
     sentence_spans = {
       'sentence': sentence,
       'spans': []
     }
     # Get all spans and their classes
-    for i in range(len(words)):
-      # Get all spans
-      spans = [[" ".join(words[i:j+1]), int(TermClasses.INVALID)] for j in range(i, min(i + max_span_len, len(words)))]
-      for span in spans:
-        # Classify each span
-        if span[0] in aspect_tags: 
-          span[1] = int(TermClasses.ASPECT)
-        elif span[0] in opinion_tags:
-          span[1] = int(TermClasses.OPINION)
-        sentence_spans["spans"].append(span)
+    span_texts = generate_spans(sentence, max_span_len)
+    spans = [[t, int(TermClasses.INVALID)] for t in span_texts]
+    for span in spans:
+      # Classify each span
+      if span[0] in aspect_tags: 
+        span[1] = int(TermClasses.ASPECT)
+      elif span[0] in opinion_tags:
+        span[1] = int(TermClasses.OPINION)
+    sentence_spans["spans"] = spans
     prepped_data.append(sentence_spans)
 
   return prepped_data
@@ -93,11 +74,10 @@ test_output = to_categorical(np.array(test_output), 3)
 
 # Create model
 model = Sequential()
-model.add(Input(shape=(100,)))
-model.add(Dense(64, activation="relu"))
+model.add(Dense(64, activation="relu", input_shape=(100, )))
 model.add(Dense(32, activation='relu'))
 model.add(Dense(3, activation='softmax'))
 
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-model.fit(x=train_input, y=train_output, validation_data=(test_input, test_output), epochs=10)
-model.save("models/ATE/ate.model")
+model.fit(x=train_input, y=train_output, validation_data=(test_input, test_output), epochs=4)
+model.save("models/ATE/good")
