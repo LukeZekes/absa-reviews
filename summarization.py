@@ -82,4 +82,5 @@ for i, a in enumerate(aspects):
     selected_phrase = random.choice(candidates)
     summary_dict[a].append(selected_phrase)
 
-print(summary_dict)
+for a in aspects:
+   print(a, ":", summary_dict[a])
