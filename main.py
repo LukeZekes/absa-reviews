@@ -44,9 +44,9 @@ def test_on_unlabeled():
       j = i + len(span)
       p = predict_type_from_span(span, i, j, model)
       max_index = np.argmax(p)
-      print(p)
-      # if max_index != 0:
-      #   print(span)
+      # print(p)
+      if max_index == 0:
+        print(span)
       # Skip spans marked as "invalid"
       # if max_index == 0:
       #   continue
