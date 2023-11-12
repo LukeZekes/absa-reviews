@@ -1,4 +1,25 @@
 import requests
+import regex as re
+def preprocess_text(text):
+    # Preprocess and stem the text
+    # Make text lowercase and remove links, text in square brackets, punctuation, and words containing numbers
+    text = text.lower()
+    text = re.sub(r'https?://\S+|www\.\S+|\[.*?\]|[^a-zA-Z\s]+|\w*\d\w*', '', text)
+    # Remove stop words
+    # filtered_words = [w for w in text.split() if w not in stop_words]
+    # tokens = word_tokenize(' '.join(filtered_words))
+    # stemmed_tokens = [stemmer.stem(t) for t in tokens]
+
+    return text.split()
+
+# Get all spans from a sentence
+def generate_spans(sentence, max_span_len):
+  words = preprocess_text(sentence)
+  spans = []
+  for i in range(len(words)):
+    for j in range(i, min(i + max_span_len, len(words))):
+        spans.append(" ".join(words[i:j+1]))
+  return spans
 
 def get_data(url):
     # GitHub URL of the text file
