@@ -25,7 +25,7 @@ stemmer = SnowballStemmer('english')
 NUM_CLUSTERS = 2
 
 # Load model
-model = Doc2Vec.load('models/good/d2v.model')
+model = Doc2Vec.load('models/Doc2Vec/d2v.model')
 
 def preprocess_text(text):
     # Preprocess and stem the text
