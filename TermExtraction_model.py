@@ -51,7 +51,7 @@ def prep_data(data, max_num_invalid = 1000000000):
   return prepped_data
 
 def predict_type_from_span(span, i, j, model):
-  vectorizer = Doc2Vec.load("models/good/d2v.model")
+  vectorizer = Doc2Vec.load("models/Doc2Vec/d2v.model")
   w = j - i + 1
   vectorized_input = np.append(vectorizer.infer_vector(span.split()), w)
   reshaped_input = vectorized_input.reshape(1, -1)
@@ -66,7 +66,7 @@ def load_model():
 
 def create_model():
   # Create input and output sets from data
-  d2v = Doc2Vec.load("models/good/d2v.model")
+  d2v = Doc2Vec.load("models/Doc2Vec/d2v.model")
   loaded_train_data = get_train_data()
   loaded_test_data = get_test_data()
   train_data = prep_data(loaded_train_data, max_num_invalid=1000)
