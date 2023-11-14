@@ -9,7 +9,7 @@ For each aspect:
 '''
 import regex as re
 import random
-import sample_data as sd
+# import sample_data as sd
 from nltk import word_tokenize
 # from gensim import FastText
 from gensim.models.doc2vec import Doc2Vec
@@ -17,9 +17,8 @@ from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from sklearn.cluster import KMeans
 
-
-sample_data = sd.get_sample_data();
-aspects = sample_data.keys();
+# sample_data = sd.get_sample_data()
+# aspects = sample_data.keys()
 stop_words = set(stopwords.words('english'))
 stemmer = SnowballStemmer('english')
 NUM_CLUSTERS = 2
@@ -49,38 +48,59 @@ def cluster_sentiment_phrases(sentiment_phrases, k):
   return phrase_cluster_indices
 
 # For each phrase, the index of its cluster is stored here
-cluster_indices = [cluster_sentiment_phrases(sample_data[a], NUM_CLUSTERS) for a in aspects]
-print(cluster_indices)
+# cluster_indices = [cluster_sentiment_phrases(sample_data[a], NUM_CLUSTERS) for a in aspects]
+
+
+
 
 # Simple summary: for each aspect, collect a phrase from each cluster
-# Initialize dictionary (using list comprehension)
-summary_dict = {
-  a: []
-  for a in aspects
-} 
-
-
-for i, a in enumerate(aspects):
-  # For each aspect create a dictionary associating each cluster index with an array of the phrases in that cluster
-  aspect_phrase_clusters = cluster_indices[i]
-  # The indices of each phrase contained in each cluster
-  cluster_distributions = {
-    c: [j for j, x in enumerate(aspect_phrase_clusters) if x == c]
-    for c in range(NUM_CLUSTERS)
+def summarize_aspects(data, num_clusters):
+  '''
+  Input: an array of:
+  {
+    "sentence": "",
+    "span_pairs": [(aspect, opinion, sentiment)]
   }
+  '''
 
-  # An cluster is associated with all of the phrases in that cluster
-  cluster_elements = {
-    c: [sample_data[a][k] for k in cluster_distributions[c]]
-    for c in range(NUM_CLUSTERS)
-  }
+  # Get all mentioned aspects
+  aspects = []
+  all_span_pairs = []
+  for item in data:
+    for pair in item["span_pairs"]:
+      all_span_pairs.append((pair[0], pair[1]))
+      aspects.append(pair[0]["text"])
+  aspects = set(aspects)
 
-  # Use some method to select a phrase from the associated array for each cluster (random/TFIDF scoring?)
-  # Random selection
-  for c in range(NUM_CLUSTERS):
-    candidates = cluster_elements[c]
-    selected_phrase = random.choice(candidates)
-    summary_dict[a].append(selected_phrase)
+  summary_dict = {
+    a: []
+    for a in aspects
+  } 
 
-for a in aspects:
-   print(a, ":", summary_dict[a])
+  # For each aspect, get all associated opinions
+  for a in aspects:
+    opinions = []
+    for pair in all_span_pairs:
+      if pair[0]["text"] == a:
+        opinions.append(pair[1]["text"])
+    opinions = set(opinions)
+    opinions = list(opinions)
+    # Cluster opinions
+    clustered_opinion_indices = cluster_sentiment_phrases(opinions, min(num_clusters, len(opinions)))
+    cluster_distributions = {
+      c: [j for j, x in enumerate(clustered_opinion_indices) if x == c]
+      for c in range(num_clusters)
+    }
+    cluster_elements = {
+      c: [opinions[i] for i in cluster_distributions[c]]
+      for c in range(num_clusters)
+    }
+
+    # Select shortest candidate
+    for c in range(num_clusters):
+      candidates = sorted(cluster_elements[c], key=len)
+      if len(candidates) > 0:
+        selected_opinion = candidates[0]
+        summary_dict[a].append(selected_opinion)
+
+  return summary_dict

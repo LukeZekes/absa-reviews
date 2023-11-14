@@ -2,14 +2,23 @@ from keras.models import load_model
 from review_scraper import get_reviews_for_product
 from extract_sentence_opinions import generate_spans, get_train_data
 from extract_sentence_opinions import preprocess_text
-from TermExtraction_model import predict_type_from_span, TermClasses, load_model, create_model
+from TermExtraction_model import predict_type_from_span, TermClasses, load_TE_model, create_model
+from sentiment_extraction import predict_from_span_pair_vector, load_SE_model
 import numpy as np
-url = "https://www.amazon.com/HP-Students-Business-Quad-Core-Storage/dp/B0B2D77YB8/ref=sr_1_4?crid=22XES9LJ5Z15W&keywords=laptop&qid=1699770510&sprefix=lap%2Caps%2C242&sr=8-4"
+from pruning import prune_sentence_spans
+from span_pair_vectors import get_span_pair_vectors
+from summarization import summarize_aspects
+from enums import SentimentClasses
+import os
+url = "https://www.amazon.com/Amazon-Basics-75hz-Panel-Monitor/dp/B08WJ26WP6/ref=sr_1_1_ffob_sspa?crid=1PWGNPZ3FIGFT&keywords=monitor&qid=1699943510&sprefix=monitor%2Caps%2C89&sr=8-1-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&psc=1#customerReviews"
 
 def prep_unlabeled_data(data, max_span_len):
   # Break into sentences
   sentences = data["text"].split('.')
-  sentences.remove('')
+  try:
+    sentences.remove('')
+  except ValueError:
+    assert True
   prepped_data = []
   # Generate spans
   for sentence in sentences:
@@ -21,12 +30,12 @@ def prep_unlabeled_data(data, max_span_len):
   
   return prepped_data
 
-def test_on_unlabeled():
+def predict_unlabeled():
   reviews = get_reviews_for_product(url)
   unlabeled_data = prep_unlabeled_data(reviews[0], 5)
   predicted_data = []
 
-  model = load_model()
+  model = load_TE_model()
   for item in unlabeled_data:
     sentence = " ".join(item["sentence"])
     spans = item["spans"]
@@ -36,23 +45,68 @@ def test_on_unlabeled():
     }
     for span in spans:
       span_result = {
-        "span": span,
+        "text": span,
         "type": 0,
         "score": 0
       }
-      i = sentence.lower().index(span)
-      j = i + len(span)
-      p = predict_type_from_span(span, i, j, model)
+      p = predict_type_from_span(span, model)
       max_index = np.argmax(p)
-      # print(p)
-      if max_index == 0:
-        print(span)
       # Skip spans marked as "invalid"
-      # if max_index == 0:
-      #   continue
-      # span_result["type"] = max_index
-      # score = p[max_index]
-      # sentence_labeled_spans["spans"].append(span_result)
+      if max_index == 0:
+        continue
+      if max_index == 1:
+        span_result["type"] = TermClasses.ASPECT
+      else:
+        span_result["type"] = TermClasses.OPINION
+      span_result["score"] = p[0][max_index]
+      sentence_labeled_spans["spans"].append(span_result)
 
-train_in, train_o, test_in, test_o,= create_model()
-test_on_unlabeled()
+    predicted_data.append(sentence_labeled_spans)
+  return predicted_data
+
+def predict_test(test_data):
+  model = load_TE_model()
+  for item in test_data:
+    sentence = item["sentence"]
+    spans = sentence["spans"]
+# dirname = os.path.dirname(__file__)
+# filename = os.path.join(dirname, r'data\\train_data.npy')
+# train_data = np.load(filename, allow_pickle=True)
+# filename = os.path.join(dirname, r'data\\test_data.npy')
+# test_data = np.load(filename, allow_pickle=True)
+# print()
+# train_d, train_in, train_o, test_d, test_in, test_o,= create_model()
+predictions = predict_unlabeled()
+# predictions = predict_test(test_d)
+pruned_predictions = [prune_sentence_spans(p, 1) for p in predictions]
+vectorized_span_pair_collection = [get_span_pair_vectors(p) for p in pruned_predictions]
+SE_model = load_SE_model()
+SE_predictions = []
+for item in vectorized_span_pair_collection:
+  result = {
+    "sentence": item["sentence"],
+    "span_pairs": []
+  }
+  for i, vector in enumerate(item["span_pairs_vectorized"]):
+    # Do sentiment analysis
+    p = predict_from_span_pair_vector(vector, SE_model)
+    max_index = np.argmax(p)
+    if max_index == 0:
+      sentiment = SentimentClasses.NEGATIVE.value
+    elif max_index == 1:
+      sentiment = SentimentClasses.INVALID.value
+    elif max_index == 2:
+      sentiment = SentimentClasses.NEUTRAL.value
+    else:
+      sentiment = SentimentClasses.POSITIVE.value
+
+    span_pair = item["span_pairs"][i]
+    aspect = span_pair[0]
+    opinion = span_pair[1]
+    if sentiment == SentimentClasses.NEGATIVE.value or sentiment == SentimentClasses.POSITIVE.value:
+      result["span_pairs"].append((aspect, opinion, sentiment))
+  SE_predictions.append(result)
+
+summary_dict = summarize_aspects(SE_predictions, 2)
+print(summary_dict)
+print()

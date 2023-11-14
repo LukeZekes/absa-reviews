@@ -32,9 +32,9 @@ print("Preprocessing complete")
 # Tag each review as a document
 tagged_data = [TaggedDocument(words=word_tokenize(_d.lower()), tags=[str(i)]) for i, _d in enumerate(reviews)]
 # Create Doc2Vec model
-model = Doc2Vec(epochs=10)
+model = Doc2Vec(epochs=10, vector_size=50)
 model.build_vocab(tagged_data)
 print("Training started")
 model.train(tagged_data, total_examples=model.corpus_count, epochs=model.epochs)
 print("Training complete")
-# model.save('models/Doc2Vec/d2v1.model')
+model.save('models/Doc2Vec/d2v_50.model')
