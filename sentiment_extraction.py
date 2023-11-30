@@ -71,10 +71,26 @@ def prep_training_data(data, max_num_invalid = 1000000000):
     prepped_data.append(prepped_item)
   return prepped_data
 
-def load_SE_model():
+def load_SE_model(val = False):
   dirname = os.path.dirname(__file__)
-  filename = os.path.join(dirname, r'models\\SE\\v1\\')
+  filename = os.path.join(dirname, r'models\\SE\\v2\\')
   model = load_model(filename)
+  if val:
+    loaded_test_data = get_test_data()
+    test_data = prep_training_data(loaded_test_data)
+    test_input = []
+    vectorized_test_input = []
+    test_output = []
+    for item in test_data:
+      for i, pair in enumerate(item["pairs"]):
+        test_input.append(pair)
+        vectorized_test_input.append(vectorize_span_pair(item["sentence"], pair))
+        test_output.append(item["labels"][i])
+
+    vectorized_test_input = np.array(vectorized_test_input)
+    vectorized_test_output = to_categorical(np.array(test_output), 4)
+
+    model.evaluate(vectorized_test_input, vectorized_test_output)
   return model
 
 # model input: vectorized_span_pair
@@ -118,9 +134,9 @@ def create_model():
   model.add(Dense(4, activation="softmax"))
 
   model.compile(optimizer='adam', loss=CategoricalCrossentropy(), metrics=['accuracy'])
-  model.fit(x=vectorized_train_input, y=vectorized_train_output, validation_data=(vectorized_test_input, vectorized_test_output), epochs=50)
+  model.fit(x=vectorized_train_input, y=vectorized_train_output, validation_data=(vectorized_test_input, vectorized_test_output), epochs=30)
 
-  model.save("models/SE/v1")
+  model.save("models/SE/v2")
 # Prep training data
 # dirname = os.path.dirname(__file__)
 # filename = os.path.join(dirname, r'data\\train_data.npy')
@@ -128,3 +144,5 @@ def create_model():
 # filename = os.path.join(dirname, r'data\\test_data.npy')
 # test_data = np.load(filename, allow_pickle=True)
 
+# create_model()
+# load_SE_model(val=True)

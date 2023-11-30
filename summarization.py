@@ -16,7 +16,7 @@ from gensim.models.doc2vec import Doc2Vec
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from sklearn.cluster import KMeans
-
+from d2v import get_current_d2v_model
 # sample_data = sd.get_sample_data()
 # aspects = sample_data.keys()
 stop_words = set(stopwords.words('english'))
@@ -24,7 +24,7 @@ stemmer = SnowballStemmer('english')
 NUM_CLUSTERS = 2
 
 # Load model
-model = Doc2Vec.load('models/Doc2Vec/d2v.model')
+model = Doc2Vec.load(get_current_d2v_model())
 
 def preprocess_text(text):
     # Preprocess and stem the text

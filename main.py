@@ -2,7 +2,8 @@ from keras.models import load_model
 from review_scraper import get_reviews_for_product
 from extract_sentence_opinions import generate_spans, get_train_data
 from extract_sentence_opinions import preprocess_text
-from TermExtraction_model import predict_type_from_span, TermClasses, load_TE_model, create_model
+from TermExtraction_model import predict_type_from_span, TermClasses, load_TE_model
+from TermExtraction_model import create_model as create_TE_model
 from sentiment_extraction import predict_from_span_pair_vector, load_SE_model
 import numpy as np
 from pruning import prune_sentence_spans
@@ -32,36 +33,37 @@ def prep_unlabeled_data(data, max_span_len):
 
 def predict_unlabeled():
   reviews = get_reviews_for_product(url)
-  unlabeled_data = prep_unlabeled_data(reviews[0], 5)
   predicted_data = []
 
   model = load_TE_model()
-  for item in unlabeled_data:
-    sentence = " ".join(item["sentence"])
-    spans = item["spans"]
-    sentence_labeled_spans = {
-      "sentence": sentence,
-      "spans": []
-    }
-    for span in spans:
-      span_result = {
-        "text": span,
-        "type": 0,
-        "score": 0
+  for review in reviews:
+    unlabeled_data = prep_unlabeled_data(review, 3)
+    for item in unlabeled_data:
+      sentence = " ".join(item["sentence"])
+      spans = item["spans"]
+      sentence_labeled_spans = {
+        "sentence": sentence,
+        "spans": []
       }
-      p = predict_type_from_span(span, model)
-      max_index = np.argmax(p)
-      # Skip spans marked as "invalid"
-      if max_index == 0:
-        continue
-      if max_index == 1:
-        span_result["type"] = TermClasses.ASPECT
-      else:
-        span_result["type"] = TermClasses.OPINION
-      span_result["score"] = p[0][max_index]
-      sentence_labeled_spans["spans"].append(span_result)
+      for span in spans:
+        span_result = {
+          "text": span,
+          "type": 0,
+          "score": 0
+        }
+        p = predict_type_from_span(span, model)
+        max_index = np.argmax(p)
+        # Skip spans marked as "invalid"
+        if max_index == 0:
+          continue
+        if max_index == 1:
+          span_result["type"] = TermClasses.ASPECT
+        else:
+          span_result["type"] = TermClasses.OPINION
+        span_result["score"] = p[0][max_index]
+        sentence_labeled_spans["spans"].append(span_result)
 
-    predicted_data.append(sentence_labeled_spans)
+      predicted_data.append(sentence_labeled_spans)
   return predicted_data
 
 def predict_test(test_data):
@@ -69,16 +71,10 @@ def predict_test(test_data):
   for item in test_data:
     sentence = item["sentence"]
     spans = sentence["spans"]
-# dirname = os.path.dirname(__file__)
-# filename = os.path.join(dirname, r'data\\train_data.npy')
-# train_data = np.load(filename, allow_pickle=True)
-# filename = os.path.join(dirname, r'data\\test_data.npy')
-# test_data = np.load(filename, allow_pickle=True)
-# print()
-# train_d, train_in, train_o, test_d, test_in, test_o,= create_model()
+
 predictions = predict_unlabeled()
 # predictions = predict_test(test_d)
-pruned_predictions = [prune_sentence_spans(p, 1) for p in predictions]
+pruned_predictions = [prune_sentence_spans(p, 0.25) for p in predictions]
 vectorized_span_pair_collection = [get_span_pair_vectors(p) for p in pruned_predictions]
 SE_model = load_SE_model()
 SE_predictions = []
@@ -107,6 +103,16 @@ for item in vectorized_span_pair_collection:
       result["span_pairs"].append((aspect, opinion, sentiment))
   SE_predictions.append(result)
 
-summary_dict = summarize_aspects(SE_predictions, 2)
-print(summary_dict)
-print()
+summary_dict = summarize_aspects(SE_predictions, 3)
+f = open("results.txt", 'w')
+f.seek
+for k in summary_dict.keys():
+  str = k + ": "
+  for v in summary_dict[k]:
+    str += v + ', '
+  str = str[0:len(str)-2]
+  str += "\n"
+  f.write(str)
+f.truncate()
+f.close()
+print("Completed")

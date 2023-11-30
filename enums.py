@@ -6,7 +6,7 @@ class TermClasses(IntEnum):
   OPINION = 2
 
 class SentimentClasses(IntEnum):
-  NEGATIVE = -1
-  INVALID = 0
-  NEUTRAL = 1
-  POSITIVE = 2
+  NEGATIVE = 0
+  INVALID = 1
+  NEUTRAL = 2
+  POSITIVE = 3

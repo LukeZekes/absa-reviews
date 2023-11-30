@@ -33,7 +33,8 @@ Algorithm:
 
 from gensim.models import Doc2Vec
 import numpy as np
-d2v = Doc2Vec.load("models/Doc2Vec/d2v.model")
+from d2v import get_current_d2v_model
+d2v = Doc2Vec.load(get_current_d2v_model())
 
 def vectorize_span_pair(sentence, pair):
   a = sentence.index(pair[0])

@@ -30,7 +30,8 @@ def get_reviews_for_product(url):
 					
 	num_available_reviews = min(100, int(total_num_reviews_text_sub[:num_size]))  # Right now it looks like Amazon will only show you up to 100, in 10 pages of 10 reviews each
 	num_pages = ceil(num_available_reviews/10) # 10 reviews per page
-
+	# Override
+	num_pages = 2
 	pagination_bar = driver.find_element(By.ID, "cm_cr-pagination_bar")
 	next_page_button = pagination_bar.find_element(By.CSS_SELECTOR, "ul > li.a-last")
 

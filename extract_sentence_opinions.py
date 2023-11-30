@@ -98,6 +98,9 @@ def get_test_data():
     return get_data('https://raw.githubusercontent.com/l294265421/ASOTE/542a3daffc6a23ed28e3ba4576527c2f0d91fd75/ASOTE-data/absa/ASOTE-v2/lapt14/asote_gold_standard/test.txt')
 def get_train_data():
     d1 = get_data('https://raw.githubusercontent.com/l294265421/ASOTE/542a3daffc6a23ed28e3ba4576527c2f0d91fd75/ASOTE-data/absa/ASOTE-v2/lapt14/asote_gold_standard/train.txt')
-    d2 = get_data("https://raw.githubusercontent.com/l294265421/ASOTE/main/ASOTE-data/absa/ASOTE-v2/rest16/asote_gold_standard/train.txt")
-    return d1 + d2
+    # d2 = get_data("https://raw.githubusercontent.com/l294265421/ASOTE/main/ASOTE-data/absa/ASOTE-v2/rest16/asote_gold_standard/train.txt")
+    # return d1 + d2
+    return d1
+
+
  
