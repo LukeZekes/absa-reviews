@@ -81,7 +81,7 @@ def load_TE_model(val = False):
     model.evaluate(vectorized_test_input, test_output)
   return model
 
-def create_model():
+def create_model(save, path = None):
   # Create input and output sets from data
   d2v = Doc2Vec.load(get_current_d2v_model())
   loaded_train_data = get_train_data()
@@ -127,7 +127,8 @@ def create_model():
 
   model.compile(optimizer='adam', loss=CategoricalCrossentropy(), metrics=['accuracy'])
   model.fit(x=vectorized_train_input, y=train_output, validation_data=(vectorized_test_input, test_output), epochs=100)
-  # model.save("models/ATE/reindexed/")
+  
+  if save: model.save(path)
 
   return train_data, train_input, train_output, test_data, test_input, test_output
 

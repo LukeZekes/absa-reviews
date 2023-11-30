@@ -99,7 +99,7 @@ def predict_from_span_pair_vector(vector, model):
   reshaped_input = vector.reshape(1, -1)
   return model.predict(reshaped_input, verbose = 0)
 
-def create_model():
+def create_model(save = False, path = None):
   loaded_train_data = get_train_data()
   train_data = prep_training_data(loaded_train_data)
   train_input = []
@@ -136,7 +136,7 @@ def create_model():
   model.compile(optimizer='adam', loss=CategoricalCrossentropy(), metrics=['accuracy'])
   model.fit(x=vectorized_train_input, y=vectorized_train_output, validation_data=(vectorized_test_input, vectorized_test_output), epochs=30)
 
-  model.save("models/SE/v2")
+  if save: model.save(path)
 # Prep training data
 # dirname = os.path.dirname(__file__)
 # filename = os.path.join(dirname, r'data\\train_data.npy')
